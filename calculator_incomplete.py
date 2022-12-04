@@ -81,20 +81,16 @@ class Calc():
                 answer = self.calculator(txt, answer)
         else:
             answer += txt
-            #answer = self.removeTwiceOperator(txt, answer)
+            answer = self.removeTwiceOperator(txt, answer)
             answer = self.removeFirstZero(answer)
             answer = self.zeroZero(txt, answer)
         return answer
 
-    '''
     def removeTwiceOperator(self, txt, answer):
-        Calc.txtlist += txt
-        if len(Calc.txtlist)>1:
-            if Calc.txtlist[-2] in self.operator and Calc.txtlist[-1] in self.operator:
-                answer = answer[:-1] + txt
-                Calc.txtlist = ''
+        if len(answer)>1:
+            if answer[-2] in self.operator and answer[-1] in self.operator:
+                answer = answer[:-2] + txt
         return answer
-    '''
 
     def delete(self, temp):
         temp = temp[:-1]
