@@ -1,13 +1,8 @@
-#사이사이 print() : console 로직 진행사항 확인용
-#미완성 계산기
-#python : 3.9
-#pyqt : 5
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-class Ui_Form(object):
-    _translate = QtCore.QCoreApplication.translate
-    def setupUi(self, Form):
+class Ui_Form(object):   
+    def __init__(self, Form):
+        self._translate = QtCore.QCoreApplication.translate
         Form.setObjectName("Form")
         Form.resize(400, 600)
         self.gridLayoutWidget = QtWidgets.QWidget(Form)
@@ -16,105 +11,40 @@ class Ui_Form(object):
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
-        self.buttonsOnGrid(Form)
+        self.buttonsOnGrid()
         self.display(Form)
-        Form.setWindowTitle(Ui_Form._translate("Form", "Form"))
+        Form.setWindowTitle(self._translate("Form", "Custom Calc"))
         QtCore.QMetaObject.connectSlotsByName(Form)
 
-    def buttonsOnGrid(self, Form):
-        self.buttonInstance(Form, 'C', 0, 2)
-        self.buttonInstance(Form, '=', 0, 3)
-        
-        self.buttonInstance(Form, '7', 1, 0)
-        self.buttonInstance(Form, '8', 1, 1)
-        self.buttonInstance(Form, '9', 1, 2)
-        self.buttonInstance(Form, '/', 1, 3)
-        
-        self.buttonInstance(Form, '4', 2, 0)
-        self.buttonInstance(Form, '5', 2, 1)
-        self.buttonInstance(Form, '6', 2, 2)
-        self.buttonInstance(Form, '*', 2, 3)
+    def buttonsOnGrid(self):
+        buttons = ['C','=','7','8','9','/','4','5','6','*','1','2','3','-','Del','0','.','+']
+        x = 0
+        for i in range(5):  
+            for j in range(4):
+                if i == 0:
+                    j = j + 2
+                    if j == 4:
+                        break
+                self.buttonInstance(buttons[x], i, j)
+                x = x + 1
 
-        self.buttonInstance(Form, '1', 3, 0)
-        self.buttonInstance(Form, '2', 3, 1)
-        self.buttonInstance(Form, '3', 3, 2)
-        self.buttonInstance(Form, '-', 3, 3)
-
-        self.buttonInstance(Form, 'Del', 4, 0)
-        self.buttonInstance(Form, '0', 4, 1)
-        self.buttonInstance(Form, '.', 4, 2)
-        self.buttonInstance(Form, '+', 4, 3)
-
-
-    def buttonInstance(self, Form, txt, n0, n1):
+    def buttonInstance(self, txt, n0, n1):
         self.toolButton = QtWidgets.QToolButton(self.gridLayoutWidget)
         self.toolButton.setMinimumSize(QtCore.QSize(80, 80))
         font = QtGui.QFont()
         font.setPointSize(20)
         self.toolButton.setFont(font)
-        self.toolButton.setText(Ui_Form._translate("Form", txt))
+        self.toolButton.setText(self._translate("Form", txt))
         self.toolButton.setObjectName(txt)
         self.gridLayout.addWidget(self.toolButton, n0, n1, 1, 1)
-        self.toolButton.clicked.connect(lambda: self.through_txt(txt))
-
-
-    def through_txt(self, txt):
-        print('press'+txt)        
-        self.ch_Main(txt)
-        #.sender()를 써서 받아오려고 했는데 계속 종료되어 아예 텍스트를 받아옴
-
-
-    temp = ''
-    operator = ['+','-','*','/','=']
-    def ch_Main(self, txt):
-        #입력한 텍스트 받기
-        if txt != '=' and txt != 'Del':
-            self.temp += txt
+        self.toolButton.clicked.connect(lambda: self.throw_txt(txt))
         
-        #문자열 가장 앞에 0이 오면 지움
-        if len(self.temp)>1:
-            self.temp = self.temp.lstrip('0')
-
-        #문자열이 0인 경우 0 입력해도 0추가 안되게
-        if self.temp=='0' and txt=='0':
-            self.temp='0'        
-
-        #Del 기능
-        if txt=='Del':
-            self.temp = self.temp[:-1]
-        else:
-            print('here is an Error - ch_Main Del')
-
-        #Clear 기능
-        if txt=='C':
-            self.temp = '0'
-
-
-
-        self.cal(txt)
-
-    def cal(self, txt):    
-        #'='누르면 계산
-        if txt=='=':
-            try:
-                ans = eval(self.temp)
-            except ZeroDivisionError:
-                print("do not divide by zero")
-                #에러는 받았는데 종료되는 문제
+    def throw_txt(self, txt):
+        calc = Calc()
+        temp = self.lineEdit.text()
+        answer = calc.ch_Main(txt, temp)
+        self.lineEdit.setText(answer)
         
-            self.answer = str(ans)
-            print(self.answer)
-            ansTemp = self.checkLastDotZero(self.answer)
-            self.lineEdit.setText(ansTemp)
-            self.temp = ansTemp
-        else:
-            self.lineEdit.setText(self.temp)
-
-        #정답 나눗셈 할 때 나오는 .0 소수점 지우기
-    def checkLastDotZero(self, ans):
-        ans = ans.strip(".0")
-        return ans
-
     def display(self, Form):
         self.lineEdit = QtWidgets.QLineEdit(Form)
         self.lineEdit.setObjectName("lineEdit")
@@ -128,11 +58,101 @@ class Ui_Form(object):
         self.lineEdit.setClearButtonEnabled(False)
         self.lineEdit.setText(QtCore.QCoreApplication.translate("Form", u"0", None))
 
+class Calc():
+    txtlist = ''   
+
+    def __init__(self):
+        self.operator = ['+','-','*','/','.','=']
+
+    def ch_Main(self, txt, answer):
+        answer = self.resetAnswerTryAgain(txt, answer)
+        if txt == 'Del':
+            answer = self.delete(answer)
+        elif txt == 'C':
+            answer = self.clear(answer)
+        elif txt == '=':
+            if answer == '0':
+                answer = '0'
+            elif len(answer) == 1 and answer not in self.operator:
+                answer = answer
+            elif answer[-1] in self.operator:
+                answer = self.delete(answer)                
+            else:
+                answer = self.calculator(txt, answer)
+        else:
+            answer += txt
+            #answer = self.removeTwiceOperator(txt, answer)
+            answer = self.removeFirstZero(answer)
+            answer = self.zeroZero(txt, answer)
+        return answer
+
+    '''
+    def removeTwiceOperator(self, txt, answer):
+        Calc.txtlist += txt
+        if len(Calc.txtlist)>1:
+            if Calc.txtlist[-2] in self.operator and Calc.txtlist[-1] in self.operator:
+                answer = answer[:-1] + txt
+                Calc.txtlist = ''
+        return answer
+    '''
+
+    def delete(self, temp):
+        temp = temp[:-1]
+        if temp == '':
+            temp = '0'
+        return temp        
+
+    def clear(self, temp):
+        temp = '0'
+        return temp
+
+    def resetAnswerTryAgain(self, txt, answer):
+        Calc.txtlist += txt
+        if len(Calc.txtlist)>1:
+            if Calc.txtlist[-2] == '=' and Calc.txtlist[-1] not in self.operator:
+                answer = '0'
+                Calc.txtlist = ''
+        return answer
+
+    def zeroDivisionError(self, answer):
+        if answer[-2] == '/' and answer[-1] =='0':
+            answer = '0'
+        return answer
+
+    def zeroZero(self, txt, answer):
+        if txt == '0' and answer == '0':
+            answer = '0'
+        elif txt == '0' and answer == '':
+            answer = '0'
+        elif answer == '':
+            answer = '0'
+        return answer
+    
+    def removeFirstZero(self, answer):
+        if len(answer)>0 and answer[0] == '0':
+            if answer[1] == '.':
+                pass
+            else:
+                answer = answer.lstrip('0')
+        return answer
+
+    def calculator(self, txt, answer):
+        answer = self.zeroDivisionError(answer)
+        answer = self.removeFirstZero(answer)        
+        answer = eval(answer)
+        answer = str(answer)
+        answer = self.checkLastDotZero(answer)
+        answer = self.zeroZero(txt, answer)
+        return answer
+
+    def checkLastDotZero(self, ans):
+        ans = ans.rstrip(".0")
+        return ans
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     Form = QtWidgets.QWidget()
-    ui = Ui_Form()
-    ui.setupUi(Form)
+    ui = Ui_Form(Form)
     Form.show()
     sys.exit(app.exec_())
